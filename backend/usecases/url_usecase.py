@@ -7,4 +7,10 @@ class UrlUsecase:
         pass
 
     async def ingest_url(self, url: str):
-        pass
+        print(f"URL Usecase: {url}")
+        # Step 1: Validate URL
+        # TODO: Step 2 - Create job entry in database
+        # TODO: Step 3 - Push to Redis queue
+        # TODO: Step 4 - Return job ID and status
+
+        return {"message": "URL validation successful"}
