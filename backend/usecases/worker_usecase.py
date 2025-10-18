@@ -102,7 +102,7 @@ class WorkerUsecase:
 
             print(f"✅ Created {len(chunks)} chunks")
 
-            # TODO: Step 5 - Generate embeddings
+            # Step 5 - Generate embeddings
             print("🧠 Generating embeddings")
             # TODO: Use embedding service from backend/services/embedding_service.py
 

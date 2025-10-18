@@ -1,9 +1,12 @@
+import uuid
 from typing import Any, Dict, List
 
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
+
+from backend.repositories.chunk_repository import ChunkRepository
 
 
 class ChunkingUsecase:
@@ -15,6 +18,9 @@ class ChunkingUsecase:
     """
 
     def __init__(self):
+        # Initialize repository
+        self.chunk_repository = ChunkRepository()
+
         # Stage 1: Markdown header splitter
         self.headers_to_split_on = [
             ("#", "Header 1"),
@@ -105,6 +111,18 @@ class ChunkingUsecase:
                 f"📊 Average chunk size: {sum(c['metadata']['chunk_size'] for c in final_chunks) // len(final_chunks)} characters"
             )
 
+            # Store chunks in MongoDB
+            print(f"💾 Storing {len(final_chunks)} chunks in database...")
+            stored_count = 0
+            for chunk in final_chunks:
+                chunk_id = str(uuid.uuid4())
+                chunk["id"] = chunk_id
+                success = await self.chunk_repository.add_chunk(chunk_id, chunk)
+                if success:
+                    stored_count += 1
+
+            print(f"✅ Stored {stored_count}/{len(final_chunks)} chunks in MongoDB")
+
             return final_chunks
 
         except Exception as e:
@@ -122,7 +140,7 @@ class ChunkingUsecase:
         print("⚠️ Using fallback chunking strategy")
         try:
             chunks = self.recursive_splitter.split_text(content)
-            return [
+            final_chunks = [
                 {
                     "content": chunk,
                     "metadata": {
@@ -135,6 +153,22 @@ class ChunkingUsecase:
                 }
                 for i, chunk in enumerate(chunks)
             ]
+
+            # Store fallback chunks in MongoDB
+            print(f"💾 Storing {len(final_chunks)} fallback chunks in database...")
+            stored_count = 0
+            for chunk in final_chunks:
+                chunk_id = str(uuid.uuid4())
+                chunk["id"] = chunk_id
+                success = await self.chunk_repository.add_chunk(chunk_id, chunk)
+                if success:
+                    stored_count += 1
+
+            print(
+                f"✅ Stored {stored_count}/{len(final_chunks)} fallback chunks in MongoDB"
+            )
+
+            return final_chunks
         except Exception as e:
             print(f"❌ Fallback chunking also failed: {str(e)}")
             return []
