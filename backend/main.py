@@ -5,16 +5,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config.database import mongodb_database
+from backend.config.redis import redis_client
 from backend.routes import url_route
 
 
 @asynccontextmanager
 async def db_lifespan(app: FastAPI):
+    # Connect to MongoDB
     mongodb_database.connect()
+
+    # Connect to Redis
+    redis_client.connect()
 
     yield
 
+    # Disconnect from databases
     mongodb_database.disconnect()
+    redis_client.disconnect()
 
 
 app = FastAPI(title="Web RAG Engine", lifespan=db_lifespan)
