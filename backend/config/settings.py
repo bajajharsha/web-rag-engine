@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     # MongoDB settings
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "web-rag-engine"
+    MONGODB_URLS_COLLECTION: str = "urls"
 
     # Redis settings
     REDIS_URL: str = "redis://default:pS2UuGNOEjxjBHNSDAS1lAtT5Abaicol@redis-13543.c232.us-east-1-2.ec2.redns.redis-cloud.com:13543"

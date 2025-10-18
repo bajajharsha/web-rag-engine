@@ -21,7 +21,7 @@ class MongoDB:
             )
 
     def get_mongo_client(self):
-        if not self.mongodb_client:
+        if self.mongodb_client is None:
             raise HTTPException(
                 status_code=503,
                 detail="MongoDB client is not connected. \n error while connecting to MongoDB client in database.py in get_mongo_client()",
@@ -30,13 +30,18 @@ class MongoDB:
 
     def disconnect(self):
         try:
-            if self.mongodb_client:
+            if self.mongodb_client is not None:
                 self.mongodb_client.close()
         except Exception as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Unable to close MongoDB connection: {str(e)} \n error while disconnecting MongoDB (from database.py in discconect())",
             )
+
+    def get_urls_collection(self):
+        return self.mongodb_client[settings.MONGODB_DB_NAME][
+            settings.MONGODB_URLS_COLLECTION
+        ]
 
 
 # Instantiate the MongoDB class
