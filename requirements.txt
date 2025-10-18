@@ -6,3 +6,5 @@ motor
 httpx
 redis
 pytz
+langchain
+langchain-text-splitters

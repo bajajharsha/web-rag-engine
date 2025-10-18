@@ -4,11 +4,15 @@ import json
 from backend.config.redis import redis_client
 from backend.config.settings import settings
 from backend.repositories.url_repository import UrlRepository
+from backend.usecases.chunking_usecase import ChunkingUsecase
+from backend.usecases.scraping_usecase import ScrapingUsecase
 
 
 class WorkerUsecase:
     def __init__(self):
         self.url_repository = UrlRepository()
+        self.scraping_usecase = ScrapingUsecase()
+        self.chunking_usecase = ChunkingUsecase()
 
     async def worker_loop(self):
         """Main worker loop that processes jobs from Redis queue"""
@@ -72,23 +76,31 @@ class WorkerUsecase:
 
         try:
             # Step 1 - Update job status to "processing" in MongoDB
-            print(f"📝[1] Updating job {job_id} status to 'processing'")
+            print(f"[1] Updating job {job_id} status to 'processing'")
             result = await self.url_repository.update_job_status(job_id, "processing")
             if not result:
                 print(f"❌ Failed to update job {job_id} status to 'processing'")
                 return
 
-            # TODO: Step 2 - Fetch URL content (web scraping)
-            print(f"🌐 Fetching content from: {url}")
-            # TODO: Use scraping service from backend/services/scraping_service.py
+            # Step 2 - Use scraping usecase to scrape the url
+            print(f"[2] Fetching content from: {url}")
+            scraped_content = await self.scraping_usecase.scrape_url(url)
 
-            # TODO: Step 3 - Clean HTML content
-            print("🧹 Cleaning HTML content")
-            # TODO: Use content cleaning service
+            if not scraped_content:
+                print(f"⚠️ No content scraped for job {job_id}")
+                return
 
-            # TODO: Step 4 - Chunk text
-            print("📄 Chunking text content")
-            # TODO: Use chunking service from backend/services/chunking_service.py
+            # Step 3 - Chunk scraped markdown content
+            print("[3] Chunking markdown content")
+            chunks = await self.chunking_usecase.chunk_markdown(
+                scraped_content, url, job_id
+            )
+
+            if not chunks:
+                print(f"⚠️ No chunks created for job {job_id}")
+                return
+
+            print(f"✅ Created {len(chunks)} chunks")
 
             # TODO: Step 5 - Generate embeddings
             print("🧠 Generating embeddings")

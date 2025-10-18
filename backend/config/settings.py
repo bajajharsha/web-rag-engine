@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_QUEUE_NAME: str = "url_processing_queue"
 
+    # Firecrawl settings
+    FIRECRAWL_API_URL: str = "https://api.firecrawl.dev/v2/scrape"
+    FIRECRAWL_API_KEY: str
+
     class Config:
         env_file = ".env"
 
