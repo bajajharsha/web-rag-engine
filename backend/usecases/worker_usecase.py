@@ -49,7 +49,7 @@ class WorkerUsecase:
                         job = json.loads(job_json)
 
                         print(
-                            f"📥 Received job: {job.get('job_id')} and url: {job.get('url')}"
+                            f"Received job: {job.get('job_id')} and url: {job.get('url')}"
                         )
                         await self.process_url_job(job)  # ✅ Now using await
                     else:
@@ -60,13 +60,13 @@ class WorkerUsecase:
                     print("\n🛑 Worker stopped by user")
                     break
                 except Exception as e:
-                    print(f"\n❌ Error in worker loop: {str(e)}")
+                    print(f"\nError in worker loop: {str(e)}")
                     await asyncio.sleep(5)  # Wait before retrying
 
         except Exception as e:
             print(f"❌ Fatal error in worker: {str(e)}")
         finally:
-            print("🔌 Worker loop ended")
+            print("Worker loop ended")
 
     async def process_url_job(self, job_data: dict):
         """
@@ -92,6 +92,7 @@ class WorkerUsecase:
 
             if not scraped_content:
                 print(f"⚠️ No content scraped for job {job_id}")
+                await self.url_repository.update_job_status(job_id, "failed")
                 return
 
             # Step 3 - Chunk scraped markdown content
@@ -102,6 +103,7 @@ class WorkerUsecase:
 
             if not chunks:
                 print(f"⚠️ No chunks created for job {job_id}")
+                await self.url_repository.update_job_status(job_id, "failed")
                 return
 
             print(f"✅ Created {len(chunks)} chunks")
@@ -112,27 +114,41 @@ class WorkerUsecase:
 
             if not embedded_chunks:
                 print(f"⚠️ No embeddings generated for job {job_id}")
+                await self.url_repository.update_job_status(job_id, "failed")
                 return
 
             print(f"✅ Generated embeddings for {len(embedded_chunks)} chunks")
 
             # Step 5 - Store in vector database
-            print("💾 Storing in vector database")
+            print("[5] Storing in vector database")
             success = await self.vectordb_usecase.upsert_embeddings(embedded_chunks)
 
             if not success:
                 print(
                     f"⚠️ Failed to store embeddings in vector database for job {job_id}"
                 )
+                await self.url_repository.update_job_status(job_id, "failed")
                 return
 
             print(f"✅ Stored {len(embedded_chunks)} embeddings in Pinecone")
 
-            # TODO: Step 7 - Update job status to "completed" in MongoDB
-            print(f"✅ Job {job_id} completed successfully")
-            # TODO: Use job repository to update status
+            # Step 6 - Update job status to "completed" in MongoDB
+            print(f"[6] Updating job {job_id} status to 'completed'")
+            result = await self.url_repository.update_job_status(job_id, "completed")
+            if result:
+                print(f"✅ Job {job_id} completed successfully and status updated")
+            else:
+                print(f"⚠️ Job {job_id} completed but failed to update status")
 
         except Exception as e:
             print(f"❌ Error processing job {job_id}: {str(e)}")
-            # TODO: Update job status to "failed" in MongoDB
-            # TODO: Log error details
+            # Update job status to "failed" in MongoDB
+            print(f"[ERROR] Updating job {job_id} status to 'failed'")
+            try:
+                result = await self.url_repository.update_job_status(job_id, "failed")
+                if result:
+                    print(f"✅ Job {job_id} marked as failed")
+                else:
+                    print(f"⚠️ Failed to update job {job_id} status to 'failed'")
+            except Exception as status_error:
+                print(f"❌ Failed to update job status: {str(status_error)}")
