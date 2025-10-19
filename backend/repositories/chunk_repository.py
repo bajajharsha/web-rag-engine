@@ -30,7 +30,7 @@ class ChunkRepository:
                 "metadata": chunk_data.get("metadata", {}),
             }
 
-            collection.insert_one(chunk_document)
+            await collection.insert_one(chunk_document)
             return True
         except Exception as e:
             print(f"❌ Failed to add chunk to database: {str(e)}")
@@ -48,7 +48,7 @@ class ChunkRepository:
         """
         try:
             collection = self._get_collection()
-            chunk = collection.find_one({"chunk_id": chunk_id})
+            chunk = await collection.find_one({"chunk_id": chunk_id})
 
             if chunk:
                 return {
@@ -73,7 +73,8 @@ class ChunkRepository:
         """
         try:
             collection = self._get_collection()
-            chunks = collection.find({"metadata.job_id": job_id})
+            chunks_cursor = collection.find({"metadata.job_id": job_id})
+            chunks = await chunks_cursor.to_list(length=None)
 
             return [
                 {
@@ -99,7 +100,8 @@ class ChunkRepository:
         """
         try:
             collection = self._get_collection()
-            chunks = collection.find({"metadata.url": url})
+            chunks_cursor = collection.find({"metadata.url": url})
+            chunks = await chunks_cursor.to_list(length=None)
 
             return [
                 {

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config.database import mongodb_database
 from backend.config.redis import redis_client
-from backend.routes import url_route
+from backend.routes import query_route, url_route
 
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(url_route.router, prefix="/api/v1", tags=["URL"])
+app.include_router(query_route.router, prefix="/api/v1", tags=["Query"])
 
 
 @app.get("/")

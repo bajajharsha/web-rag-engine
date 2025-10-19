@@ -15,7 +15,7 @@ class UrlRepository:
         """Add a url to the database"""
         try:
             collection = self._get_collection()
-            collection.insert_one(url_data)
+            await collection.insert_one(url_data)
             print(f"URL {url_data['url']} added to database successfully")
             return True
         except Exception as e:
@@ -26,7 +26,9 @@ class UrlRepository:
         """Update the status of a job"""
         try:
             collection = self._get_collection()
-            collection.update_one({"job_id": job_id}, {"$set": {"status": status}})
+            await collection.update_one(
+                {"job_id": job_id}, {"$set": {"status": status}}
+            )
             print(f"Job {job_id} status updated to {status} successfully")
             return True
         except Exception as e:
