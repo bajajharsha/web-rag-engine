@@ -5,7 +5,9 @@ from backend.config.redis import redis_client
 from backend.config.settings import settings
 from backend.repositories.url_repository import UrlRepository
 from backend.usecases.chunking_usecase import ChunkingUsecase
+from backend.usecases.embedding_usecase import EmbeddingUsecase
 from backend.usecases.scraping_usecase import ScrapingUsecase
+from backend.usecases.vectordb_usecase import VectorDBUsecase
 
 
 class WorkerUsecase:
@@ -13,6 +15,8 @@ class WorkerUsecase:
         self.url_repository = UrlRepository()
         self.scraping_usecase = ScrapingUsecase()
         self.chunking_usecase = ChunkingUsecase()
+        self.embedding_usecase = EmbeddingUsecase()
+        self.vectordb_usecase = VectorDBUsecase()
 
     async def worker_loop(self):
         """Main worker loop that processes jobs from Redis queue"""
@@ -102,13 +106,27 @@ class WorkerUsecase:
 
             print(f"✅ Created {len(chunks)} chunks")
 
-            # Step 5 - Generate embeddings
-            print("🧠 Generating embeddings")
-            # TODO: Use embedding service from backend/services/embedding_service.py
+            # Step 4 - Generate embeddings
+            print("[4] Generating embeddings")
+            embedded_chunks = await self.embedding_usecase.generate_embeddings(chunks)
 
-            # TODO: Step 6 - Store in vector database
+            if not embedded_chunks:
+                print(f"⚠️ No embeddings generated for job {job_id}")
+                return
+
+            print(f"✅ Generated embeddings for {len(embedded_chunks)} chunks")
+
+            # Step 5 - Store in vector database
             print("💾 Storing in vector database")
-            # TODO: Use vector service from backend/services/vector_service.py
+            success = await self.vectordb_usecase.upsert_embeddings(embedded_chunks)
+
+            if not success:
+                print(
+                    f"⚠️ Failed to store embeddings in vector database for job {job_id}"
+                )
+                return
+
+            print(f"✅ Stored {len(embedded_chunks)} embeddings in Pinecone")
 
             # TODO: Step 7 - Update job status to "completed" in MongoDB
             print(f"✅ Job {job_id} completed successfully")

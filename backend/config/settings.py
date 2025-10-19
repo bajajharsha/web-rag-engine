@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     FIRECRAWL_API_URL: str = "https://api.firecrawl.dev/v2/scrape"
     FIRECRAWL_API_KEY: str
 
+    # Embedding settings
+    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    EMBEDDING_DIMENSION: int = 384
+
+    # Pinecone settings
+    PINECONE_API_KEY: str
+    PINECONE_ENVIRONMENT: str = "us-east-1"
+    PINECONE_INDEX_NAME: str = "web-rag-index"
+
     class Config:
         env_file = ".env"
 

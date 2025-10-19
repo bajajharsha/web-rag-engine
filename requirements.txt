@@ -8,3 +8,6 @@ redis
 pytz
 langchain
 langchain-text-splitters
+sentence-transformers
+pinecone-client
+pinecone
