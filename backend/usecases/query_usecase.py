@@ -1,7 +1,9 @@
 from fastapi import Depends
 
+from backend.prompts.llm_prompt import RAG_PROMPT
 from backend.repositories.chunk_repository import ChunkRepository
 from backend.usecases.embedding_usecase import EmbeddingUsecase
+from backend.usecases.groq_usecase import GroqUsecase
 from backend.usecases.vectordb_usecase import VectorDBUsecase
 
 
@@ -11,29 +13,101 @@ class QueryUsecase:
         embedding_usecase: EmbeddingUsecase = Depends(EmbeddingUsecase),
         vectordb_usecase: VectorDBUsecase = Depends(VectorDBUsecase),
         chunk_repository: ChunkRepository = Depends(ChunkRepository),
+        groq_usecase: GroqUsecase = Depends(GroqUsecase),
     ):
         self.embedding_usecase = embedding_usecase
         self.vectordb_usecase = vectordb_usecase
         self.chunk_repository = chunk_repository
+        self.groq_usecase = groq_usecase
 
-    async def query_documents(self, request: str):
-        # Step 1 - Generate embedding for user query
-        query_embedding = await self.embedding_usecase.generate_single_embedding(
-            request
-        )
+    async def query_documents(self, request: str, top_k: int = 5):
+        try:
+            # Step 1 - Generate embedding for user query
+            print(f"🔍 Processing query: {request}")
+            query_embedding = await self.embedding_usecase.generate_single_embedding(
+                request
+            )
 
-        # Step 2 - Search vector database for similar chunks
-        similar_chunks = await self.vectordb_usecase.search_similar(query_embedding)
-        print(f"Similar chunks: {similar_chunks}")
+            if not query_embedding:
+                return {
+                    "answer": "Sorry, I couldn't process your query. Please try again.",
+                    "sources": [],
+                    "query": request,
+                }
 
-        # Step 3 - Retrieve chunk content from MongoDB
-        for chunk in similar_chunks:
-            chunk_content = await self.chunk_repository.get_chunk(chunk["id"])
-            print(f"Chunk content: {chunk_content}")
+            # Step 2 - Search vector database for similar chunks
+            print(f"🔍 Searching for top {top_k} similar chunks...")
+            similar_chunks = await self.vectordb_usecase.search_similar(
+                query_embedding, top_k=top_k
+            )
+            print(f"Found {len(similar_chunks)} similar chunks")
 
-        # Step 4 - Build prompt with context and query
+            if not similar_chunks:
+                return {
+                    "answer": "I couldn't find any relevant information for your query.",
+                    "sources": [],
+                    "query": request,
+                }
 
-        # TODO: Step 5 - Send to LLM for answer generation
-        # TODO: Step 6 - Return answer with cited sourcespass
+            # Step 3 - Retrieve chunk content from MongoDB and build context
+            context_chunks = []
+            cited_sources = []
 
-        return "This is a placeholder response. Query processing not yet implemented."
+            for chunk in similar_chunks:
+                chunk_content = await self.chunk_repository.get_chunk(chunk["id"])
+
+                if chunk_content:
+                    # Add to context for LLM
+                    context_chunks.append(
+                        {
+                            "content": chunk_content["content"],
+                            "url": chunk_content["metadata"].get("url", "Unknown URL"),
+                            "score": chunk["score"],
+                        }
+                    )
+
+                    # Add to cited sources
+                    cited_sources.append(
+                        {
+                            "chunk_id": chunk["id"],
+                            "url": chunk_content["metadata"].get("url", "Unknown URL"),
+                            "content": chunk_content["content"][:200] + "..."
+                            if len(chunk_content["content"]) > 200
+                            else chunk_content["content"],
+                            "score": chunk["score"],
+                            "metadata": chunk_content["metadata"],
+                        }
+                    )
+
+            if not context_chunks:
+                return {
+                    "answer": "I found similar chunks but couldn't retrieve their content.",
+                    "sources": [],
+                    "query": request,
+                }
+
+            # Step 4 - Build prompt with context and query
+            context_text = "\n\n".join(
+                [
+                    f"Source: {chunk['url']}\nContent: {chunk['content']}"
+                    for chunk in context_chunks
+                ]
+            )
+
+            # Use the RAG prompt from the prompts file
+            prompt = RAG_PROMPT.format(context=context_text, query=request)
+
+            # Step 5 - Send to LLM for answer generation
+            print("🤖 Generating response with LLM...")
+            llm_response = await self.groq_usecase.generate_response(prompt)
+
+            # Step 6 - Return answer with cited sources
+            return {"answer": llm_response, "sources": cited_sources, "query": request}
+
+        except Exception as e:
+            print(f"❌ Error in query processing: {str(e)}")
+            return {
+                "answer": f"Sorry, I encountered an error while processing your query: {str(e)}",
+                "sources": [],
+                "query": request,
+            }

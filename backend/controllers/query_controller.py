@@ -7,5 +7,5 @@ class QueryController:
     def __init__(self, query_usecase: QueryUsecase = Depends(QueryUsecase)):
         self.query_usecase = query_usecase
 
-    async def query_documents(self, request: str):
-        return await self.query_usecase.query_documents(request)
+    async def query_documents(self, request: str, top_k: int = 5):
+        return await self.query_usecase.query_documents(request, top_k)
