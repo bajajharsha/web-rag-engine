@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class QueryRequest(BaseModel):
     query: str
+    session_id: Optional[str] = None
     top_k: Optional[int] = 5
 
 

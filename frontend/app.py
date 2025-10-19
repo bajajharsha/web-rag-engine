@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 
 import requests
@@ -88,12 +89,16 @@ def ingest_url(url: str) -> Optional[dict]:
         return None
 
 
-def query_documents(query: str, top_k: int = 5) -> Optional[dict]:
-    """Query the RAG system"""
+def query_documents(
+    query: str, session_id: Optional[str] = None, top_k: int = 5
+) -> Optional[dict]:
+    """Query the RAG system with optional session for conversation history"""
     try:
-        response = requests.post(
-            f"{API_BASE_URL}/query", json={"query": query, "top_k": top_k}, timeout=60
-        )
+        payload = {"query": query, "top_k": top_k}
+        if session_id:
+            payload["session_id"] = session_id
+
+        response = requests.post(f"{API_BASE_URL}/query", json=payload, timeout=60)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -102,6 +107,15 @@ def query_documents(query: str, top_k: int = 5) -> Optional[dict]:
 
 
 def main():
+    # Initialize session state for session_id (persistent across reruns)
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+        print(f"🆔 New session created: {st.session_state.session_id}")
+
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
     # Header
     st.markdown(
         '<div class="main-header">🔍 Web RAG Engine</div>', unsafe_allow_html=True
@@ -142,9 +156,13 @@ def main():
     # Main Chat Interface
     st.markdown("## 💬 Chat with Your Documents")
 
-    # Initialize chat history
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    # Display session info (for debugging - can be removed in production)
+    with st.expander("🔧 Session Info"):
+        st.text(f"Session ID: {st.session_state.session_id}")
+        if st.button("🔄 Start New Conversation"):
+            st.session_state.session_id = str(uuid.uuid4())
+            st.session_state.messages = []
+            st.rerun()
 
     # Default top_k value
     top_k = 5
@@ -184,7 +202,9 @@ def main():
         # Get assistant response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response = query_documents(prompt, top_k)
+                response = query_documents(
+                    prompt, session_id=st.session_state.session_id, top_k=top_k
+                )
 
                 if response:
                     answer = response.get(

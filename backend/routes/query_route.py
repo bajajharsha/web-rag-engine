@@ -10,8 +10,19 @@ router = APIRouter()
 async def query_documents(
     request: QueryRequest, query_controller: QueryController = Depends(QueryController)
 ):
+    """
+    Query the RAG system with optional chat session for conversation history
+
+    Args:
+        request: QueryRequest with query, optional session_id, and top_k
+
+    Returns:
+        QueryResponse with answer and cited sources
+    """
     try:
-        result = await query_controller.query_documents(request.query, request.top_k)
+        result = await query_controller.query_documents(
+            request.query, request.session_id, request.top_k
+        )
         return QueryResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
