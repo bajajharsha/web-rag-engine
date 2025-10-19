@@ -110,22 +110,18 @@ def main():
 
     # Sidebar for URL Ingestion
     with st.sidebar:
-        st.markdown("### 📥 URL Ingestion")
-        st.markdown("Add documents to your knowledge base")
+        st.markdown("### 📥 Add Document")
+        st.markdown("Enter a URL to add to your knowledge base")
 
         url_input = st.text_input(
-            "Enter URL",
+            "URL",
             placeholder="https://example.com/article",
-            help="Enter a valid URL to scrape and add to the knowledge base",
+            label_visibility="collapsed",
         )
 
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            ingest_button = st.button(
-                "🚀 Ingest", type="primary", use_container_width=True
-            )
-        with col2:
-            clear_button = st.button("🗑️ Clear", use_container_width=True)
+        ingest_button = st.button(
+            "🚀 Add to Knowledge Base", type="primary", use_container_width=True
+        )
 
         if ingest_button and url_input:
             with st.spinner("Processing URL..."):
@@ -133,31 +129,15 @@ def main():
 
                 if result:
                     st.success("✅ URL submitted for processing!")
-                    with st.container():
-                        st.markdown(f"**Job ID:** `{result.get('job_id', 'N/A')}`")
-                        st.markdown(f"**Status:** {result.get('status', 'N/A')}")
-                        st.info(
-                            "💡 The URL is being processed in the background. You can start querying once processing is complete."
-                        )
+                    st.info(
+                        "💡 The URL is being processed in the background. You can start querying once processing is complete."
+                    )
 
-        if clear_button:
-            st.rerun()
-
-        # Job Status Section
         st.markdown("---")
-        st.markdown("### 📊 Job Status")
-        st.info("Background worker processes your URLs automatically")
-
-        # Show recent ingestions if stored in session state
-        if "ingestion_history" not in st.session_state:
-            st.session_state.ingestion_history = []
-
-        if st.session_state.ingestion_history:
-            st.markdown("**Recent Ingestions:**")
-            for idx, job in enumerate(st.session_state.ingestion_history[-5:]):
-                with st.expander(f"Job {idx + 1}: {job.get('url', 'N/A')[:30]}..."):
-                    st.markdown(f"**Job ID:** `{job.get('job_id', 'N/A')}`")
-                    st.markdown(f"**Status:** {job.get('status', 'N/A')}")
+        st.markdown("### ℹ️ About")
+        st.info(
+            "This RAG system allows you to query documents from URLs using semantic search and AI-powered responses."
+        )
 
     # Main Chat Interface
     st.markdown("## 💬 Chat with Your Documents")
@@ -166,15 +146,8 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Settings
-    with st.expander("⚙️ Query Settings"):
-        top_k = st.slider(
-            "Number of sources to retrieve",
-            min_value=1,
-            max_value=10,
-            value=5,
-            help="How many relevant chunks to retrieve from the vector database",
-        )
+    # Default top_k value
+    top_k = 5
 
     # Display chat messages
     for message in st.session_state.messages:

@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     # Groq settings
     GROQ_API_KEY: str
-    GROQ_MODEL: str = "llama-3.1-8b-instant"
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
     class Config:
         env_file = ".env"
