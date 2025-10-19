@@ -20,7 +20,7 @@ class WorkerUsecase:
 
     async def worker_loop(self):
         """Main worker loop that processes jobs from Redis queue"""
-        print("🔍 Starting worker loop... from usecase")
+        print("🔍 Starting worker loop...")
         print("Press Ctrl+C to stop the worker")
 
         try:
@@ -32,28 +32,25 @@ class WorkerUsecase:
                     )
 
                     if queue_length == 0:
-                        print(".", end="", flush=True)  # Show worker is alive
-                        await asyncio.sleep(5)  # Wait 5 seconds before checking again
+                        print(".", end="", flush=True)
+                        await asyncio.sleep(5)
                         continue
 
                     print(f"\n📊 Queue has {queue_length} jobs")
 
-                    # Get job from queue (blocking pop)
                     job_data = redis_client.get_redis_client().brpop(
                         settings.REDIS_QUEUE_NAME, timeout=10
                     )
 
                     if job_data:
-                        # job_data is tuple: (queue_name, job_json)
                         _, job_json = job_data
                         job = json.loads(job_json)
 
                         print(
                             f"Received job: {job.get('job_id')} and url: {job.get('url')}"
                         )
-                        await self.process_url_job(job)  # ✅ Now using await
+                        await self.process_url_job(job)
                     else:
-                        # No job received (timeout)
                         print(".", end="", flush=True)
 
                 except KeyboardInterrupt:
@@ -61,7 +58,7 @@ class WorkerUsecase:
                     break
                 except Exception as e:
                     print(f"\nError in worker loop: {str(e)}")
-                    await asyncio.sleep(5)  # Wait before retrying
+                    await asyncio.sleep(5)
 
         except Exception as e:
             print(f"❌ Fatal error in worker: {str(e)}")

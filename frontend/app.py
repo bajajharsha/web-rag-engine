@@ -50,13 +50,6 @@ st.markdown(
         background-color: #FFEBEE;
         border-left: 4px solid #F44336;
     }
-    .source-card {
-        background-color: #F5F5F5;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 0.5rem 0;
-        border-left: 3px solid #1E88E5;
-    }
     .chat-message {
         padding: 1rem;
         border-radius: 0.5rem;
@@ -153,16 +146,17 @@ def main():
             "This RAG system allows you to query documents from URLs using semantic search and AI-powered responses."
         )
 
-    # Main Chat Interface
-    st.markdown("## 💬 Chat with Your Documents")
-
-    # Display session info (for debugging - can be removed in production)
-    with st.expander("🔧 Session Info"):
-        st.text(f"Session ID: {st.session_state.session_id}")
-        if st.button("🔄 Start New Conversation"):
+        st.markdown("---")
+        st.markdown("### 💬 Chat Controls")
+        if st.button(
+            "🔄 New Chat", help="Start a new conversation", use_container_width=True
+        ):
             st.session_state.session_id = str(uuid.uuid4())
             st.session_state.messages = []
             st.rerun()
+
+    # Main Chat Interface
+    st.markdown("## 💬 Chat with Your Documents")
 
     # Default top_k value
     top_k = 5
@@ -171,24 +165,6 @@ def main():
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-
-            # Display sources if available
-            if message["role"] == "assistant" and "sources" in message:
-                if message["sources"]:
-                    st.markdown("---")
-                    st.markdown("### 📚 Sources")
-                    for idx, source in enumerate(message["sources"], 1):
-                        with st.expander(
-                            f"Source {idx}: {source.get('url', 'Unknown')[:50]}..."
-                        ):
-                            st.markdown(
-                                f"**URL:** [{source.get('url', 'N/A')}]({source.get('url', '#')})"
-                            )
-                            st.markdown(
-                                f"**Relevance Score:** {source.get('score', 0):.4f}"
-                            )
-                            st.markdown("**Content:**")
-                            st.text(source.get("content", "No content available"))
 
     # Chat input
     if prompt := st.chat_input("Ask a question about your documents..."):
@@ -210,37 +186,19 @@ def main():
                     answer = response.get(
                         "answer", "Sorry, I couldn't generate an answer."
                     )
-                    sources = response.get("sources", [])
 
                     # Display answer
                     st.markdown(answer)
 
-                    # Display sources
-                    if sources:
-                        st.markdown("---")
-                        st.markdown("### 📚 Sources")
-                        for idx, source in enumerate(sources, 1):
-                            with st.expander(
-                                f"Source {idx}: {source.get('url', 'Unknown')[:50]}..."
-                            ):
-                                st.markdown(
-                                    f"**URL:** [{source.get('url', 'N/A')}]({source.get('url', '#')})"
-                                )
-                                st.markdown(
-                                    f"**Relevance Score:** {source.get('score', 0):.4f}"
-                                )
-                                st.markdown("**Content:**")
-                                st.text(source.get("content", "No content available"))
-
                     # Add assistant response to chat history
                     st.session_state.messages.append(
-                        {"role": "assistant", "content": answer, "sources": sources}
+                        {"role": "assistant", "content": answer}
                     )
                 else:
                     error_msg = "Sorry, I encountered an error processing your query."
                     st.error(error_msg)
                     st.session_state.messages.append(
-                        {"role": "assistant", "content": error_msg, "sources": []}
+                        {"role": "assistant", "content": error_msg}
                     )
 
     # Clear chat button
