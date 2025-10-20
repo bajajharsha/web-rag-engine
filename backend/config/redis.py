@@ -16,7 +16,6 @@ class RedisClient:
             self.redis_client = redis.from_url(
                 self.redis_url, db=self.db, decode_responses=True
             )
-            # Test connection
             self.redis_client.ping()
         except Exception as e:
             raise HTTPException(
@@ -40,5 +39,4 @@ class RedisClient:
             )
 
 
-# Instantiate the Redis client
 redis_client = RedisClient(settings.REDIS_URL, settings.REDIS_DB)

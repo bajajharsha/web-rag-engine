@@ -20,9 +20,7 @@ class QueueService:
         """
         try:
             client = redis_client.get_redis_client()
-            # Convert job data to JSON string
             job_json = json.dumps(job_data, default=str)
-            # Push to queue (LPUSH adds to left side of list)
             client.lpush(self.queue_name, job_json)
             return True
         except Exception as e:
@@ -37,7 +35,6 @@ class QueueService:
         """
         try:
             client = redis_client.get_redis_client()
-            # BRPOP blocks until job is available or timeout
             result = client.brpop(self.queue_name, timeout=timeout)
 
             if result:

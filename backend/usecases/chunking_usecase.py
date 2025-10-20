@@ -30,15 +30,15 @@ class ChunkingUsecase:
         ]
         self.markdown_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=self.headers_to_split_on,
-            strip_headers=False,  # Keep headers in chunks
+            strip_headers=False,
         )
 
         # Stage 2: Recursive character splitter
         self.recursive_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,  # Max characters per chunk
-            chunk_overlap=200,  # Overlap for context continuity
+            chunk_size=1000,
+            chunk_overlap=200,
             length_function=len,
-            separators=["\n\n", "\n", " ", ""],  # Try these separators in order
+            separators=["\n\n", "\n", " ", ""],
         )
 
     async def chunk_markdown(
@@ -50,29 +50,22 @@ class ChunkingUsecase:
             # Stage 1: Split by markdown headers
             md_header_splits = self.markdown_splitter.split_text(markdown_content)
             print(f"Stage 1: Split into {len(md_header_splits)} header-based sections")
-            print(
-                f"DEBUG: Type of first split: {type(md_header_splits[0]) if md_header_splits else 'empty'}"
-            )
 
             # Stage 2: Further split large sections
             final_chunks = []
             for i, doc in enumerate(md_header_splits):
-                # Extract content and metadata from Document object
                 page_content = (
                     doc.page_content if hasattr(doc, "page_content") else str(doc)
                 )
                 doc_metadata = doc.metadata if hasattr(doc, "metadata") else {}
 
-                # Convert metadata to plain dict (remove any Document objects)
                 clean_metadata = {}
                 for key, value in doc_metadata.items():
                     if hasattr(value, "__dict__"):
-                        # Skip complex objects
                         clean_metadata[key] = str(value)
                     else:
                         clean_metadata[key] = value
 
-                # If section is too large, split it further
                 if len(page_content) > self.recursive_splitter._chunk_size:
                     sub_chunks = self.recursive_splitter.split_text(page_content)
                     for j, sub_chunk in enumerate(sub_chunks):
@@ -80,7 +73,7 @@ class ChunkingUsecase:
                             {
                                 "content": sub_chunk,
                                 "metadata": {
-                                    **clean_metadata,  # Use cleaned metadata
+                                    **clean_metadata,
                                     "url": url,
                                     "job_id": job_id,
                                     "chunk_index": len(final_chunks),
@@ -91,12 +84,11 @@ class ChunkingUsecase:
                             }
                         )
                 else:
-                    # Section is small enough, keep as is
                     final_chunks.append(
                         {
                             "content": page_content,
                             "metadata": {
-                                **clean_metadata,  # Use cleaned metadata
+                                **clean_metadata,
                                 "url": url,
                                 "job_id": job_id,
                                 "chunk_index": len(final_chunks),
@@ -112,7 +104,7 @@ class ChunkingUsecase:
             )
 
             # Store chunks in MongoDB
-            print(f"💾 Storing {len(final_chunks)} chunks in database...")
+            print(f"Storing {len(final_chunks)} chunks in database...")
             stored_count = 0
             for chunk in final_chunks:
                 chunk_id = str(uuid.uuid4())
@@ -127,7 +119,6 @@ class ChunkingUsecase:
 
         except Exception as e:
             print(f"❌ Error chunking markdown: {str(e)}")
-            # Fallback: Simple chunking if markdown splitting fails
             return await self._fallback_chunking(markdown_content, url, job_id)
 
     async def _fallback_chunking(

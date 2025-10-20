@@ -43,16 +43,14 @@ class EmbeddingUsecase:
             embeddings = self.model.encode(
                 chunk_contents,
                 show_progress_bar=True,
-                convert_to_tensor=False,  # Return numpy arrays instead of tensors
+                convert_to_tensor=False,
             )
 
             # Add embeddings to chunks
             embedded_chunks = []
             for i, chunk in enumerate(chunks):
                 embedded_chunk = chunk.copy()
-                embedded_chunk["embedding"] = embeddings[
-                    i
-                ].tolist()  # Convert to list for JSON serialization
+                embedded_chunk["embedding"] = embeddings[i].tolist()
                 embedded_chunks.append(embedded_chunk)
 
             print(f"✅ Generated {len(embedded_chunks)} embeddings")
@@ -60,7 +58,7 @@ class EmbeddingUsecase:
 
         except Exception as e:
             print(f"❌ Error generating embeddings: {str(e)}")
-            return chunks  # Return original chunks if embedding fails
+            return chunks
 
     async def generate_single_embedding(self, text: str) -> List[float]:
         """

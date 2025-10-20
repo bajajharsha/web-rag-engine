@@ -12,12 +12,9 @@ class VectorDBUsecase:
     """
 
     def __init__(self):
-        # Initialize Pinecone client
-        print("🌲 Initializing Pinecone client...")
         self.pc = Pinecone(api_key=settings.PINECONE_API_KEY)
         self.index_name = settings.PINECONE_INDEX_NAME
         self.index = None
-        print("✅ Pinecone client initialized")
 
     def _get_index(self):
         """Get or create Pinecone index"""
@@ -25,7 +22,7 @@ class VectorDBUsecase:
             try:
                 # Check if index exists
                 if self.index_name not in self.pc.list_indexes().names():
-                    print(f"🔨 Creating Pinecone index: {self.index_name}")
+                    print(f"Creating Pinecone index: {self.index_name}")
                     self.pc.create_index(
                         name=self.index_name,
                         dimension=settings.EMBEDDING_DIMENSION,
@@ -59,7 +56,7 @@ class VectorDBUsecase:
             return False
 
         try:
-            print(f"🌲 Upserting {len(embedded_chunks)} embeddings to Pinecone...")
+            print(f"Upserting {len(embedded_chunks)} embeddings to Pinecone...")
 
             # Prepare vectors for Pinecone
             vectors = []

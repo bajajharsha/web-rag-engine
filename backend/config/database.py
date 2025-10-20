@@ -10,6 +10,7 @@ class MongoDB:
         self.mongodb_client = None
 
     def connect(self):
+        """Connect to MongoDB"""
         try:
             self.mongodb_client = AsyncIOMotorClient(
                 self.database_url, maxpoolsize=30, minpoolsize=5
@@ -21,6 +22,7 @@ class MongoDB:
             )
 
     def get_mongo_client(self):
+        """Get MongoDB client"""
         if self.mongodb_client is None:
             raise HTTPException(
                 status_code=503,
@@ -29,6 +31,7 @@ class MongoDB:
         return self.mongodb_client
 
     def disconnect(self):
+        """Disconnect from MongoDB"""
         try:
             if self.mongodb_client is not None:
                 self.mongodb_client.close()
@@ -39,6 +42,7 @@ class MongoDB:
             )
 
     def get_urls_collection(self):
+        """Get URLs collection"""
         return self.mongodb_client[settings.MONGODB_DB_NAME][
             settings.MONGODB_URLS_COLLECTION
         ]

@@ -32,25 +32,20 @@ class QueryUsecase:
             # Step 0 - Handle chat session (if session_id provided)
             chat_history_text = ""
             if session_id:
-                # Get or create session
                 await self.chat_session_usecase.get_or_create_session(session_id)
-
-                # Add user message to session
                 await self.chat_session_usecase.add_user_message(session_id, request)
 
-                # Get recent chat history for context
                 chat_history = await self.chat_session_usecase.get_chat_history(
                     session_id, limit=10
                 )
 
-                # Format chat history for LLM (exclude the current message)
                 if len(chat_history) > 1:
                     chat_history_text = (
                         self.chat_session_usecase.format_chat_history_for_llm(
                             chat_history[:-1]
                         )
                     )
-                    print(f"💬 Using chat history: {len(chat_history) - 1} messages")
+                    print(f"Using chat history: {len(chat_history) - 1} messages")
 
             # Step 1 - Generate embedding for user query
             print(f"🔍 Processing query: {request}")
@@ -130,7 +125,7 @@ class QueryUsecase:
             )
 
             # Step 5 - Send to LLM for answer generation
-            print("🤖 Generating response with LLM...")
+            print("Generating response with LLM...")
             llm_response = await self.groq_usecase.generate_response(prompt)
 
             # Step 6 - Save assistant response to session

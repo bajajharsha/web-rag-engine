@@ -1,6 +1,3 @@
-# usecase to write the business logic to ingest url
-# It will be using services and repositories to implement the business logic
-
 import uuid
 from datetime import datetime
 from typing import Any, Dict
@@ -40,6 +37,7 @@ class UrlUsecase:
             "created_at": datetime.now(tz_india).strftime("%Y-%m-%d %H:%M:%S"),
         }
         print(f"Job data: {job_data}")
+
         # Step 2: Push job to Redis queue
         try:
             self.queue_service.push_job(job_data)

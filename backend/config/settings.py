@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     MONGODB_URLS_COLLECTION: str = "urls"
 
     # Redis settings
-    REDIS_URL: str = "redis://default:pS2UuGNOEjxjBHNSDAS1lAtT5Abaicol@redis-13543.c232.us-east-1-2.ec2.redns.redis-cloud.com:13543"
+    REDIS_URL: str
     REDIS_DB: int = 0
     REDIS_QUEUE_NAME: str = "url_processing_queue"
 

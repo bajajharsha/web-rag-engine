@@ -24,11 +24,9 @@ class ChatSessionUsecase:
         Returns:
             Session data
         """
-        # Try to get existing session
         session = await self.chat_session_repository.get_session(session_id)
 
         if not session:
-            # Create new session if doesn't exist
             await self.chat_session_repository.create_session(session_id)
             session = await self.chat_session_repository.get_session(session_id)
 

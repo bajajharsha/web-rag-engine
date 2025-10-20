@@ -20,6 +20,7 @@ class WorkerUsecase:
 
     async def worker_loop(self):
         """Main worker loop that processes jobs from Redis queue"""
+
         print("🔍 Starting worker loop...")
         print("Press Ctrl+C to stop the worker")
 
