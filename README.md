@@ -385,7 +385,7 @@ Visit:
 - Frontend: http://localhost:8501
 
 ## Demo Video 
-Link for the video
+https://drive.google.com/file/d/1mtzLgVu1S_XvFZ-Hd1Aesvqz-8jaV3WT/view?usp=sharing 
 
 ## Folder Structure
 ```
