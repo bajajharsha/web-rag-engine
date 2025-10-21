@@ -24,34 +24,68 @@ User → POST /query → Query embedding → Pinecone search →
 
 ```mermaid
 flowchart TD
-  U[User]
-  FE[Streamlit UI]
-  API[FastAPI API\n/routes]
-  RQ[Redis Queue]
-  W[Worker Process]
-  SC[Firecrawl Scraper]
-  CH[Chunking\nMarkdown + Recursive]
-  EMB[Embeddings\nMiniLM (384d)]
-  PC[Pinecone\nVector DB]
-  MG[MongoDB\n(metadata, chunks, chat)]
-  LLM[Groq LLM]
-
-  U -->|POST /ingest-url| API
-  FE <-->|HTTP| API
-  API -->|lpush job| RQ
-  W -->|brpop job| RQ
-  W --> SC --> CH --> EMB
-  EMB --> PC
-  CH --> MG
-  W -->|update status| MG
-
-  U -->|POST /query| API
-  API -->|embed query| EMB
-  API -->|search top-k| PC
-  API -->|get full chunk| MG
-  API -->|build prompt + chat history| LLM
-  LLM -->|answer| API
-  API --> U
+    %% User Interface
+    U[👤 User]
+    FE[🖥️ Streamlit Frontend]
+    
+    %% API Layer
+    API[🚀 FastAPI API<br/>/routes]
+    
+    %% Queue System
+    RQ[📋 Redis Queue<br/>url_processing_queue]
+    
+    %% Worker Process
+    W[⚙️ Worker Process<br/>worker.py]
+    
+    %% Processing Pipeline
+    SC[🕷️ Firecrawl Scraper<br/>Web Content Extraction]
+    CH[✂️ Chunking Service<br/>Markdown + Recursive Splitter]
+    EMB[🧠 Embeddings Service<br/>MiniLM (384d)]
+    
+    %% Storage Systems
+    PC[🌲 Pinecone Vector DB<br/>web-rag-index]
+    MG[(🗄️ MongoDB<br/>urls, chunks, chat_sessions)]
+    
+    %% LLM Service
+    LLM[🤖 Groq LLM<br/>Llama 3.3 70B]
+    
+    %% URL Ingestion Flow
+    U -->|1. POST /ingest-url| API
+    FE <-->|HTTP Requests| API
+    API -->|2. lpush job| RQ
+    W -->|3. brpop job| RQ
+    W -->|4. scrape| SC
+    SC -->|5. markdown content| CH
+    CH -->|6. text chunks| EMB
+    CH -->|7. store chunks| MG
+    EMB -->|8. upsert vectors| PC
+    W -->|9. update job status| MG
+    
+    %% Query Flow
+    U -->|10. POST /query| API
+    API -->|11. embed query| EMB
+    API -->|12. search similar| PC
+    PC -->|13. return chunk IDs| API
+    API -->|14. fetch full chunks| MG
+    MG -->|15. return chunk content| API
+    API -->|16. build prompt + chat history| LLM
+    LLM -->|17. generate answer| API
+    API -->|18. return response| U
+    
+    %% Styling
+    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef apiClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef queueClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef workerClass fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef storageClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef llmClass fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    
+    class U,FE userClass
+    class API apiClass
+    class RQ queueClass
+    class W,SC,CH,EMB workerClass
+    class PC,MG storageClass
+    class LLM llmClass
 ```
 
 Clean architecture layering in the codebase:
@@ -136,7 +170,7 @@ Clean architecture layering in the codebase:
 
 #### 1) `urls` Collection
 **Purpose:** Tracks URL ingestion jobs and their processing status
-```json
+```jsonc
 {
   "job_id": "uuid-string",                    // Unique job identifier
   "url": "https://example.com/article",      // Source URL being processed
@@ -148,7 +182,7 @@ Clean architecture layering in the codebase:
 
 #### 2) `chunks` Collection
 **Purpose:** Stores text chunks with metadata for retrieval and context
-```json
+```jsonc
 {
   "chunk_id": "uuid-string",                 // Unique chunk identifier (matches Pinecone vector ID)
   "content": "Chunk text content...",        // Actual text content of the chunk
@@ -170,7 +204,7 @@ Clean architecture layering in the codebase:
 
 #### 3) `chat_sessions` Collection
 **Purpose:** Stores conversational context for multi-turn chat interactions
-```json
+```jsonc
 {
   "session_id": "uuid-string",              // Unique session identifier
   "messages": [                             // Array of conversation messages
@@ -204,7 +238,7 @@ Clean architecture layering in the codebase:
 
 #### Vector Schema
 **Purpose:** Stores embeddings with minimal metadata for fast similarity search
-```json
+```jsonc
 {
   "id": "chunk_id-uuid",                    // Matches MongoDB chunk_id
   "values": [0.123, -0.456, 0.789, ...],   // 384-dimensional embedding vector
@@ -219,14 +253,14 @@ Clean architecture layering in the codebase:
 ### API Request/Response Schemas
 
 #### URL Ingestion Request
-```json
+```jsonc
 {
   "url": "https://example.com/article"      // Valid HTTP/HTTPS URL (Pydantic HttpUrl validation)
 }
 ```
 
 #### URL Ingestion Response (HTTP 202)
-```json
+```jsonc
 {
   "job_id": "uuid-string",                 // Unique job identifier
   "status": "pending",                     // Initial job status
@@ -236,7 +270,7 @@ Clean architecture layering in the codebase:
 ```
 
 #### Query Request
-```json
+```jsonc
 {
   "query": "What is machine learning?",     // User's question
   "session_id": "uuid-string",             // Optional: for conversation context
@@ -245,7 +279,7 @@ Clean architecture layering in the codebase:
 ```
 
 #### Query Response
-```json
+```jsonc
 {
   "answer": "Machine learning is...",       // LLM-generated response
   "sources": [                             // Retrieved source chunks
