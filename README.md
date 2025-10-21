@@ -29,48 +29,48 @@ flowchart TD
     FE[🖥️ Streamlit Frontend]
     
     %% API Layer
-    API[🚀 FastAPI API<br/>/routes]
+    API["🚀 FastAPI API<br/>/routes"]
     
     %% Queue System
-    RQ[📋 Redis Queue<br/>url_processing_queue]
+    RQ["📋 Redis Queue<br/>url_processing_queue"]
     
     %% Worker Process
-    W[⚙️ Worker Process<br/>worker.py]
+    W["⚙️ Worker Process<br/>worker.py"]
     
     %% Processing Pipeline
-    SC[🕷️ Firecrawl Scraper<br/>Web Content Extraction]
-    CH[✂️ Chunking Service<br/>Markdown + Recursive Splitter]
-    EMB[🧠 Embeddings Service<br/>MiniLM (384d)]
+    SC["🕷️ Firecrawl Scraper<br/>Web Content Extraction"]
+    CH["✂️ Chunking Service<br/>Markdown + Recursive Splitter"]
+    EMB["🧠 Embeddings Service<br/>MiniLM (384d)"]
     
     %% Storage Systems
-    PC[🌲 Pinecone Vector DB<br/>web-rag-index]
-    MG[(🗄️ MongoDB<br/>urls, chunks, chat_sessions)]
+    PC["🌲 Pinecone Vector DB<br/>web-rag-index"]
+    MG[("🗄️ MongoDB<br/>urls, chunks, chat_sessions")]
     
     %% LLM Service
-    LLM[🤖 Groq LLM<br/>Llama 3.3 70B]
+    LLM["🤖 Groq LLM<br/>Llama 3.3 70B"]
     
     %% URL Ingestion Flow
-    U -->|1. POST /ingest-url| API
-    FE <-->|HTTP Requests| API
-    API -->|2. lpush job| RQ
-    W -->|3. brpop job| RQ
-    W -->|4. scrape| SC
-    SC -->|5. markdown content| CH
-    CH -->|6. text chunks| EMB
-    CH -->|7. store chunks| MG
-    EMB -->|8. upsert vectors| PC
-    W -->|9. update job status| MG
+    U -->|"1. POST /ingest-url"| API
+    FE <-->|"HTTP Requests"| API
+    API -->|"2. lpush job"| RQ
+    W -->|"3. brpop job"| RQ
+    W -->|"4. scrape"| SC
+    SC -->|"5. markdown content"| CH
+    CH -->|"6. text chunks"| EMB
+    CH -->|"7. store chunks"| MG
+    EMB -->|"8. upsert vectors"| PC
+    W -->|"9. update job status"| MG
     
     %% Query Flow
-    U -->|10. POST /query| API
-    API -->|11. embed query| EMB
-    API -->|12. search similar| PC
-    PC -->|13. return chunk IDs| API
-    API -->|14. fetch full chunks| MG
-    MG -->|15. return chunk content| API
-    API -->|16. build prompt + chat history| LLM
-    LLM -->|17. generate answer| API
-    API -->|18. return response| U
+    U -->|"10. POST /query"| API
+    API -->|"11. embed query"| EMB
+    API -->|"12. search similar"| PC
+    PC -->|"13. return chunk IDs"| API
+    API -->|"14. fetch full chunks"| MG
+    MG -->|"15. return chunk content"| API
+    API -->|"16. build prompt + chat history"| LLM
+    LLM -->|"17. generate answer"| API
+    API -->|"18. return response"| U
     
     %% Styling
     classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
