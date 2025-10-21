@@ -23,69 +23,21 @@ User → POST /query → Query embedding → Pinecone search →
 ```
 
 ```mermaid
-flowchart TD
-    %% User Interface
-    U[👤 User]
-    FE[🖥️ Streamlit Frontend]
+flowchart LR
+    User[User] --> API[FastAPI API]
+    API --> Queue[Redis Queue]
+    Queue --> Worker[Worker]
+    Worker --> Scraper[Scrape Content]
+    Scraper --> Chunker[Chunk Text]
+    Chunker --> Embedder[Create Embeddings]
+    Embedder --> VectorDB[Pinecone]
+    Chunker --> Database[MongoDB]
     
-    %% API Layer
-    API["🚀 FastAPI API<br/>/routes"]
-    
-    %% Queue System
-    RQ["📋 Redis Queue<br/>url_processing_queue"]
-    
-    %% Worker Process
-    W["⚙️ Worker Process<br/>worker.py"]
-    
-    %% Processing Pipeline
-    SC["🕷️ Firecrawl Scraper<br/>Web Content Extraction"]
-    CH["✂️ Chunking Service<br/>Markdown + Recursive Splitter"]
-    EMB["🧠 Embeddings Service<br/>MiniLM (384d)"]
-    
-    %% Storage Systems
-    PC["🌲 Pinecone Vector DB<br/>web-rag-index"]
-    MG[("🗄️ MongoDB<br/>urls, chunks, chat_sessions")]
-    
-    %% LLM Service
-    LLM["🤖 Groq LLM<br/>Llama 3.3 70B"]
-    
-    %% URL Ingestion Flow
-    U -->|"1. POST /ingest-url"| API
-    FE <-->|"HTTP Requests"| API
-    API -->|"2. lpush job"| RQ
-    W -->|"3. brpop job"| RQ
-    W -->|"4. scrape"| SC
-    SC -->|"5. markdown content"| CH
-    CH -->|"6. text chunks"| EMB
-    CH -->|"7. store chunks"| MG
-    EMB -->|"8. upsert vectors"| PC
-    W -->|"9. update job status"| MG
-    
-    %% Query Flow
-    U -->|"10. POST /query"| API
-    API -->|"11. embed query"| EMB
-    API -->|"12. search similar"| PC
-    PC -->|"13. return chunk IDs"| API
-    API -->|"14. fetch full chunks"| MG
-    MG -->|"15. return chunk content"| API
-    API -->|"16. build prompt + chat history"| LLM
-    LLM -->|"17. generate answer"| API
-    API -->|"18. return response"| U
-    
-    %% Styling
-    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef apiClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef queueClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef workerClass fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef storageClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-    classDef llmClass fill:#f1f8e9,stroke:#33691e,stroke-width:2px
-    
-    class U,FE userClass
-    class API apiClass
-    class RQ queueClass
-    class W,SC,CH,EMB workerClass
-    class PC,MG storageClass
-    class LLM llmClass
+    User --> API2[FastAPI API]
+    API2 --> VectorDB2[Pinecone]
+    VectorDB2 --> Database2[MongoDB]
+    Database2 --> LLM[Groq LLM]
+    LLM --> User
 ```
 
 Clean architecture layering in the codebase:
